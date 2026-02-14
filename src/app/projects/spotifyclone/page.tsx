@@ -5,57 +5,63 @@ import { useEffect, useRef, useState } from "react";
 import { FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import "./spotifyclone.css";
 
-// --- Floating Music Icons Background ---
+// --- Floating Music Icons Background (Optimized) ---
 function FloatingMusicIcons() {
-  const [icons, setIcons] = useState<Array<{id: number, x: number, y: number, symbol: string, size: number, speed: number}>>([]);
+  const iconsRef = useRef<Array<{id: number, x: number, y: number, symbol: string, size: number, speed: number}>>([]);
+  const [, setTrigger] = useState(0);
+  const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const musicSymbols = ['♪', '♫', '♬', '♩', '♭', '𝄞'];
-    const newIcons = [];
 
-    for (let i = 0; i < 60; i++) {
-      newIcons.push({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        symbol: musicSymbols[Math.floor(Math.random() * musicSymbols.length)],
-        size: 16 + Math.random() * 24,
-        speed: 0.5 + Math.random() * 1.5
-      });
+    // Initialize icons once
+    if (iconsRef.current.length === 0) {
+      for (let i = 0; i < 30; i++) { // Reduced from 60 to 30
+        iconsRef.current.push({
+          id: i,
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          symbol: musicSymbols[Math.floor(Math.random() * musicSymbols.length)],
+          size: 16 + Math.random() * 24,
+          speed: 0.5 + Math.random() * 1.5
+        });
+      }
     }
 
-    setIcons(newIcons);
-
+    // Use RAF instead of setInterval for smoother animation
     const animate = () => {
-      setIcons(prev => prev.map(icon => {
-        let newY = icon.y - icon.speed * 0.1;
+      iconsRef.current = iconsRef.current.map(icon => {
+        let newY = icon.y - icon.speed * 0.08;
         
-        // If icon goes off screen, respawn at top with random x position
         if (newY < -5) {
           return {
             ...icon,
             x: Math.random() * 100,
-            y: 105 + Math.random() * 10, // Start just above the top
+            y: 105 + Math.random() * 10,
             symbol: musicSymbols[Math.floor(Math.random() * musicSymbols.length)],
             size: 16 + Math.random() * 24,
             speed: 0.5 + Math.random() * 1.5
           };
         }
         
-        return {
-          ...icon,
-          y: newY
-        };
-      }));
+        return { ...icon, y: newY };
+      });
+
+      // Trigger re-render less frequently (every 2 frames)
+      setTrigger(prev => (prev + 1) % 2);
+      rafIdRef.current = requestAnimationFrame(animate);
     };
 
-    const interval = setInterval(animate, 50);
-    return () => clearInterval(interval);
+    rafIdRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    };
   }, []);
 
   return (
     <div className="floating-music-icons">
-      {icons.map(icon => (
+      {iconsRef.current.map(icon => (
         <div
           key={icon.id}
           className="music-icon"
@@ -90,9 +96,10 @@ function MusicCursorController() {
   return null;
 }
 
-// --- Radar + Audio Wave Background (like the image) ---
+// --- Radar + Audio Wave Background (Optimized) ---
 function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const barsRef = useRef<{ x: number; phase: number }[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -100,7 +107,7 @@ function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: false });
     if (!ctx) return;
 
     let rafId: number;
@@ -117,11 +124,11 @@ function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
 
     resize();
 
-    // Precompute bar positions
-    const barCount = 120;
-    const bars: { x: number; phase: number }[] = [];
+    // Precompute bar positions once
+    const barCount = 80; // Reduced from 120
+    barsRef.current = [];
     for (let i = 0; i < barCount; i++) {
-      bars.push({
+      barsRef.current.push({
         x: (i / (barCount - 1)) * width,
         phase: Math.random() * Math.PI * 2,
       });
@@ -136,7 +143,6 @@ function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
       ctx.fillRect(0, 0, width, height);
 
       const primary = "#28d7ff";
-      const secondary = "#94e6ff";
 
       // Radar-style circular UI on the left
       const centerX = width * 0.18;
@@ -153,19 +159,19 @@ function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
       ctx.lineWidth = 2 * dpr;
       ctx.stroke();
 
-      // Multiple concentric circles
-      for (let i = 1; i <= 5; i++) {
+      // Multiple concentric circles (reduced count)
+      for (let i = 1; i <= 3; i++) {
         ctx.beginPath();
-        ctx.arc(0, 0, (maxR * i) / 6, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(40, 215, 255, ${0.15 + i * 0.08})`;
+        ctx.arc(0, 0, (maxR * i) / 4, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(40, 215, 255, ${0.15 + i * 0.1})`;
         ctx.lineWidth = 1 * dpr;
         ctx.setLineDash([4 * dpr, 6 * dpr]);
         ctx.stroke();
       }
       ctx.setLineDash([]);
 
-      // Rotating radial lines
-      const segments = 28;
+      // Rotating radial lines (reduced)
+      const segments = 16;
       for (let i = 0; i < segments; i++) {
         const angle = (i / segments) * Math.PI * 2 + t * 0.0008;
         const innerR = maxR * 0.2;
@@ -188,8 +194,8 @@ function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
       ctx.arc(0, 0, pulseR, 0, Math.PI * 2);
       ctx.fill();
 
-      // Small orbiting dots
-      const dotCount = 24;
+      // Small orbiting dots (reduced)
+      const dotCount = 12;
       for (let i = 0; i < dotCount; i++) {
         const angle = (i / dotCount) * Math.PI * 2 + t * 0.0012;
         const r = maxR * 0.85;
@@ -210,7 +216,7 @@ function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
       ctx.translate(0, centerLineY);
 
       // Glow bars
-      for (const bar of bars) {
+      for (const bar of barsRef.current) {
         const progress = bar.x / width;
         const wave =
           Math.sin(progress * 3.5 * Math.PI + t * 0.002 + bar.phase) +
@@ -236,8 +242,8 @@ function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
 
       // Main waveform line
       ctx.beginPath();
-      for (let i = 0; i < bars.length; i++) {
-        const bar = bars[i];
+      for (let i = 0; i < barsRef.current.length; i++) {
+        const bar = barsRef.current[i];
         const x = bar.x;
         const progress = bar.x / width;
         const wave =
@@ -262,7 +268,6 @@ function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
     let start = performance.now();
     const loop = (time: number) => {
       draw(time - start);
-      rafId = requestAnimationFrame(loop);
     };
     rafId = requestAnimationFrame(loop);
 
@@ -286,19 +291,26 @@ function AudioEqualizerBackground({ darkMode }: { darkMode: boolean }) {
 export default function SpotifyClonePage() {
   const [darkMode] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [videoPlaying, setVideoPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleVideoPlay = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
-      setVideoPlaying(true);
-    }
-  };
+  useEffect(() => {
+    if (!mounted || !videoRef.current) return;
+
+    // Auto-play video without user interaction when mounted
+    const playVideo = async () => {
+      try {
+        await videoRef.current?.play();
+      } catch (error) {
+        console.log("Autoplay prevented or failed");
+      }
+    };
+
+    playVideo();
+  }, [mounted]);
 
   if (!mounted) {
     return (
@@ -362,20 +374,9 @@ export default function SpotifyClonePage() {
                 autoPlay
                 loop
                 playsInline
-                onPlay={() => setVideoPlaying(true)}
-                onPause={() => setVideoPlaying(false)}
               >
                 <source src="https://res.cloudinary.com/dztthidxb/video/upload/v1767121997/SPOTIFYCLONE-video_tmsh8f.mp4" type="video/mp4" />
               </video>
-              {!videoPlaying && (
-                <button 
-                  className="video-play-button"
-                  onClick={handleVideoPlay}
-                  aria-label="Play video"
-                >
-                  ▶️
-                </button>
-              )}
             </div>
           </section>
 
