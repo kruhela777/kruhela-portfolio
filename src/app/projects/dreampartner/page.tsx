@@ -165,7 +165,7 @@ export default function DreamPartnerPage() {
       <HeartCursorController />
 
       <div className="dp-content-container">
-        <Link href="/home" className="dp-back-button">
+        <Link href="/home#projects-work" className="dp-back-button">
           ←
         </Link>
         <div className="dp-inner">

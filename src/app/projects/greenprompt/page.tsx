@@ -152,8 +152,8 @@ export default function GreenPromptPage() {
       <GreenCursorController />
 
       <div className="content-container">
-        <Link href="/home" className="back-button">
-          &lt;
+        <Link href="/home#selected-projects-section" className="back-button">
+          ←
         </Link>
         <div className="greenprompt-inner">
           <section className="greenprompt-left">

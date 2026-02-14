@@ -253,22 +253,25 @@
 }
 
 .back-button {
-  display: inline-block;
-  margin-bottom: 20px;
-  padding: 10px 20px;
-  background: rgba(0, 255, 136, 0.1);
-  color: #00ff88;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  color: #00cccc;
   text-decoration: none;
-  border-radius: 8px;
   font-family: 'Inter', sans-serif;
-  font-weight: 400;
   font-size: 1rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border: 2px solid #00cccc;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.8);
   transition: all 0.3s ease;
-  border: 1px solid rgba(0, 255, 136, 0.2);
+  cursor: pointer;
 }
 
 .back-button:hover {
-  background: rgba(0, 255, 136, 0.2);
+  background: #00cccc;
+  color: #000;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.1);
 }

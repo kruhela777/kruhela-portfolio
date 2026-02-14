@@ -331,7 +331,7 @@ export default function SpotifyClonePage() {
       <MusicCursorController />
 
       <div className="content-container">
-        <Link href="/home" className="back-button">
+        <Link href="/home#projects-work" className="back-button">
           ←
         </Link>
         <div className="spotifyclone-inner">
